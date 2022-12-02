@@ -1,0 +1,7 @@
+{
+    "cmake.configureOnOpen": true,
+    "files.associations": {
+        "librg.h": "c",
+        "cmath": "cpp"
+    }
+}

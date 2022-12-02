@@ -1,0 +1,12 @@
+[submodule "deps/raylib"]
+	path = deps/raylib
+	url = https://github.com/raysan5/raylib.git
+[submodule "build/deps/reactphysics"]
+	path = build/deps/reactphysics
+	url = https://github.com/DanielChappuis/reactphysics3d.git
+[submodule "deps/reactphysics"]
+	path = deps/reactphysics
+	url = https://github.com/DanielChappuis/reactphysics3d.git
+[submodule "deps/librg"]
+	path = deps/librg
+	url = https://github.com/zpl-c/librg.git
