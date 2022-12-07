@@ -7,6 +7,6 @@
 [submodule "deps/reactphysics"]
 	path = deps/reactphysics
 	url = https://github.com/DanielChappuis/reactphysics3d.git
-[submodule "deps/librg"]
-	path = deps/librg
-	url = https://github.com/zpl-c/librg.git
+[submodule "deps/entt"]
+	path = deps/entt
+	url = https://github.com/skypjack/entt.git

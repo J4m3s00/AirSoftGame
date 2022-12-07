@@ -1,74 +1,98 @@
-#include "deps/librg/code/librg.h"
+#define ENET_IMPLEMENTATION
 #include "deps/enet.h"
 
 
 #include <stdio.h>
+#include <iostream>
 
-librg_world *server_world = NULL;
+#include <thread>
+#include <atomic>
 
 
-int StartServer(int port)
+
+static std::thread updateThread;
+static std::atomic<bool> serverRunning;
+
+void ServerEventConnect(const ENetEvent& event) 
 {
-    ENetAddress address = {0};
-
-    address.host = ENET_HOST_ANY; /* Bind the server to the default localhost.     */
-    address.port = port; /* Bind the server to port . */
-
-    /* create a server */
-    ENetHost *server = enet_host_create(&address, 4, 2, 0, 0);
-
-    if (server == NULL) {
-        printf("[server] An error occurred while trying to create an ENet server host.\n");
-        return 1;
-    }
-
-    printf("[server] Started an ENet server...\n");
-    server_world = librg_world_create();
-
-    if (server_world == NULL) {
-        printf("[server] An error occurred while trying to create a server world.\n");
-        return 1;
-    }
-
-    printf("[server] Created a new server world\n");
-
-    /* store our host to the userdata */
-    librg_world_userdata_set(server_world, server);
-
-    /* config our world grid */
-    librg_config_chunksize_set(server_world, 16, 16, 16);
-    librg_config_chunkamount_set(server_world, 9, 9, 9);
-    librg_config_chunkoffset_set(server_world, LIBRG_OFFSET_MID, LIBRG_OFFSET_MID, LIBRG_OFFSET_MID);
-
-
-    return 0;
+    printf("[server] User connected from %x:%u.\n",  event.peer->address.host, event.peer->address.port);
+}
+void ServerEventDisconnect(const ENetEvent& event) 
+{
+    printf("[server] User disconnected from %x:%u.\n", event.peer->address.host, event.peer->address.port);
 }
 
-int StopServer()
+void ServerEvemtTimeout(const ENetEvent& event) 
 {
-    if (!librg_world_valid(server_world))
-        return 1;
+    printf("[server] User timed out from %x:%u.\n", event.peer->address.host, event.peer->address.port);
+}
+void ServerEventReceive(const ENetEvent& event) 
+{
 
-    ENetHost *server = (ENetHost *)librg_world_userdata_get(server_world);
+}
 
-    enet_host_destroy(server);
-    librg_world_destroy(server_world);
-    server_world = NULL;
-
-    return 0;
+void UpdateServer(ENetHost* server)
+{
+    ENetEvent event = {0};
+    while (enet_host_service(server, &event, 1000) > 0)
+    {
+        switch (event.type)
+        {
+        case ENET_EVENT_TYPE_CONNECT: ServerEventConnect(event); break;
+        case ENET_EVENT_TYPE_DISCONNECT: ServerEventDisconnect(event); break;
+        case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT: ServerEvemtTimeout(event); break;
+        case ENET_EVENT_TYPE_RECEIVE: ServerEventReceive(event); break;
+        case ENET_EVENT_TYPE_NONE: break;
+        }
+    }
 }
 
 int main()
 {
-    if (enet_initialize() != 0)
+    
+
+    serverRunning = true;
+
+    updateThread = std::thread([](){
+
+        if (enet_initialize())
+        {
+            printf("[server] Error initializing ENet.\n");
+            return;
+        }
+
+        ENetAddress address = {0};
+        address.host = ENET_HOST_ANY;
+        address.port = 25565;
+
+        ENetHost* server = enet_host_create(&address, 16, 2, 0, 0);
+        if (server == NULL)
+        {
+            printf("[server] Could not start the server.\n");
+            return;
+        }
+
+        printf("[server] Started on port %d.\n", address.port);
+
+        while (serverRunning)
+        {
+            UpdateServer(server);
+        }
+
+        enet_host_destroy(server);
+    });
+
+    std::cin.get();
+
+    serverRunning = false;
+
+    if (updateThread.joinable())
     {
-        printf("Error: Could not start enet!\n");
-        return 1;
+        updateThread.join();
     }
-    StartServer(25565);
 
+    printf("[server] Stopped!\n");
 
-    StopServer();
     enet_deinitialize();
-    return 0;
+    return 0;    
 }
