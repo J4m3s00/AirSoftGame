@@ -77,6 +77,21 @@ void NetClient::Disconnect()
 }
 
 void NetClient::Send_PlayerMove(rp::Vector3 position, rp::Vector3 velocity)
+{   
+    Packet p = Packet::Create(PPlayer_Move{position, velocity});
+
+    SendPacket(p);
+
+    p.Release();
+}
+
+void NetClient::SendPacket(const Packet& packet)
 {
-    
+    ENetPacket* enPacket = enet_packet_create(NULL, 0, ENET_PACKET_FLAG_RELIABLE);
+    enPacket->data = new enet_uint8[packet.Size()];
+    enPacket->dataLength = packet.Size();
+    memcpy(enPacket->data, &packet.GetType(), sizeof(PacketType));
+    memcpy(enPacket->data + sizeof(PacketType), packet.GetBuffer(), packet.Size() - sizeof(PacketType));
+ 
+    enet_peer_send(fPeer, 0, enPacket);
 }

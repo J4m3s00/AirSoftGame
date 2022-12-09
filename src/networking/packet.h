@@ -2,10 +2,6 @@
 
 #define PCLASS(type) public: static const PacketType sPacketType = PacketType:: type;
 
-struct vec2 {float x; float y;};
-struct vec3 {float x;float y;float z;};
-
-
 // Basic Network packet
 enum class PacketType
 {
@@ -25,42 +21,42 @@ enum class PacketType
 struct PPlayer_Move
 {
     PCLASS(Player_Move)
-    vec3 Position;
-    vec3 Velocity;
+    Vec3 Position;
+    Vec3 Velocity;
 };
 
 struct PPlayer_Shoot
 {
     PCLASS(Player_Shoot)
-    vec3 Position;
-    vec3 Direction;
+    Vec3 Position;
+    Vec3 Direction;
     float Spread;
-    vec2 SprayOffset;
+    Vec2 SprayOffset;
 };
 
 struct PPlayer_Jump
 {
     PCLASS(Player_Jump)
-    vec3 Position;
-    vec3 Velocity;
+    Vec3 Position;
+    Vec3 Velocity;
 };
 
 struct PPlayer_ThrowNade
 {
     PCLASS(Player_ThrowNade)
-    vec3 Position;
-    vec3 Velocity;
+    Vec3 Position;
+    Vec3 Velocity;
 };
 
-class PacketData
+class Packet
 {
 private:
     PacketType      fType;
     unsigned char*  fBuffer;
     size_t          fBufferSize;
 public:
-    PacketData() = default;
-    ~PacketData() = default;
+    Packet() = default;
+    ~Packet() = default;
 
     inline uint32_t Size() const
     {
@@ -70,6 +66,16 @@ public:
     inline bool Valid() const
     {
         return fBuffer != NULL;
+    }
+
+    inline const PacketType& GetType() const 
+    {
+        return fType;
+    }
+
+    inline const void* GetBuffer() const 
+    {
+        return fBuffer;
     }
 
     inline void Release()
@@ -104,11 +110,23 @@ public:
         memcpy(&result, fBuffer, fBufferSize);
         return result;
     }
+
+    void FromBuffer(void* buffer, size_t bufferSize)
+    {
+        Release();
+        fType = *(PacketType*)buffer;
+        void* ptr = ((uint8_t*)buffer) + sizeof(PacketType);
+        
+        uint32_t packetDataSize = bufferSize - sizeof(PacketType);
+        fBuffer = new uint8_t[packetDataSize];
+        fBufferSize = packetDataSize;
+        memcpy(fBuffer, ptr, packetDataSize);
+    }
 private:
     template <typename T>
-    static PacketData CreatePacket(PacketType type, const T& data)
+    static Packet CreatePacket(PacketType type, const T& data)
     {
-        PacketData result;
+        Packet result;
         result.fType = type;
         result.fBuffer = new unsigned char[sizeof(T)];
         result.fBufferSize = sizeof(T);
@@ -116,8 +134,8 @@ private:
         return result;
     }
 public:
-    static PacketData Create(PPlayer_Move data) { return CreatePacket(PacketType::Player_Move, data); }
-    static PacketData Create(PPlayer_Jump data) { return CreatePacket(PacketType::Player_Jump, data); }
-    static PacketData Create(PPlayer_Shoot data) { return CreatePacket(PacketType::Player_Shoot, data); }
-    static PacketData Create(PPlayer_ThrowNade data) { return CreatePacket(PacketType::Player_ThrowNade, data); }    
+    static Packet Create(PPlayer_Move data) { return CreatePacket(PacketType::Player_Move, data); }
+    static Packet Create(PPlayer_Jump data) { return CreatePacket(PacketType::Player_Jump, data); }
+    static Packet Create(PPlayer_Shoot data) { return CreatePacket(PacketType::Player_Shoot, data); }
+    static Packet Create(PPlayer_ThrowNade data) { return CreatePacket(PacketType::Player_ThrowNade, data); }    
 };

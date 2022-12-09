@@ -5,8 +5,6 @@
 
 
 
-
-
 template <typename T>
 struct NetworkMessage {
     T ID;
@@ -174,6 +172,11 @@ void HandlePlayerMovement(Camera& camera)
         pressed = true;
     }
 
+    // Update network
+    if (pressed)
+    {
+        client.Send_PlayerMove(VECTOR_CAST(rp::Vector3)camera.position, {0.0f, 0.0f, 0.0f});
+    }
 }
 
 void ConnectToServer()

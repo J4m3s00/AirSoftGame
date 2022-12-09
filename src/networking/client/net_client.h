@@ -21,7 +21,8 @@ namespace AirSoft {
         void Disconnect();
 
         void Send_PlayerMove(rp::Vector3 position, rp::Vector3 velocity);
-
+    private:
+        void SendPacket(const Packet& packet);
     };
 
 }

@@ -8,6 +8,7 @@ namespace AirSoft {
      */
     class NetServer 
     {
+    private:
         ENetHost* fHost;
     public:
         NetServer(int port = 25565);
@@ -16,11 +17,16 @@ namespace AirSoft {
         void Update();
 
         void ShutDown();
+
+        void SendToAllBut(Packet packet, ENetPeer* not);
     private:
         void ServerEventConnect(const ENetEvent& event);
         void ServerEventDisconnect(const ENetEvent& event);
         void ServerEventTimeout(const ENetEvent& event);
         void ServerEventReceive(const ENetEvent& event);
+
+    private:
+        void OnPlayerMove(const PPlayer_Move& data);
     };
 
 }

@@ -9,7 +9,7 @@ add_subdirectory(src/game)
 add_subdirectory(src/networking)
 add_subdirectory(src/graphics)
 
-add_executable(Game main.cpp client.cpp)
+add_executable(Game main.cpp)
 
 add_executable(ServerExec server.cpp)
 

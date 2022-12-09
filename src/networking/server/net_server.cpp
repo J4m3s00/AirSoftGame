@@ -48,6 +48,20 @@ void NetServer::ShutDown()
     }
 }
 
+void NetServer::SendToAllBut(Packet packet, ENetPeer* not)
+{
+    ENetPeer* current = fHost->peers;
+    while (current < fHost->peers + fHost->peerCount) 
+    {
+        if (current != not) 
+        {
+            
+        }
+
+        current++;
+    } 
+}
+
 void printPaddedHex(uint8_t byte)
 {
     char str[2];
@@ -102,5 +116,21 @@ void NetServer::ServerEventTimeout(const ENetEvent& event)
 
 void NetServer::ServerEventReceive(const ENetEvent& event)
 {
+    if (event.packet->data && event.packet->dataLength > 0)
+    {
+        Packet p{};
+        p.FromBuffer(event.packet->data, event.packet->dataLength);
+
+        switch (p.GetType())
+        {
+        case PacketType::Player_Move: OnPlayerMove(p.GetVal<PPlayer_Move>()); break;
+        }
+    }
+
     enet_packet_destroy(event.packet);
+}
+
+void NetServer::OnPlayerMove(const PPlayer_Move& data)
+{
+    printf("[server] Player Move Pos: (%f, %f, %f)\n", data.Position.x, data.Position.y, data.Position.z);
 }
