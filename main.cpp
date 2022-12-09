@@ -1,19 +1,9 @@
-#include "reactphysics3d/reactphysics3d.h"
+#include "air_net.h"
+#include "air_graphics.h"
 
 #include <iostream>
 
-#include "raylib.h"
-#include "rlgl.h"
-#include "raymath.h"
 
-#define RLIGHTS_IMPLEMENTATION
-#include "rlights.h"
-
-
-
-#include "client.h"
-
-#include <entt/entt.hpp>
 
 
 
@@ -37,8 +27,6 @@ namespace rp = reactphysics3d;
 #define MAX_LIGHTS 4
 
 
-Vector3 floorSize = {100.0f, 1.0f, 100.0f};
-float radius = 10.0f;
 const float playerHeight = 20;
 const float playerRadius = .2f;
 
@@ -50,9 +38,8 @@ float pitch = 0.0f;
 
 Vector2 mousePositionDelta = {0.0f, 0.0f};
 Vector3 directionVector = {0.0f, 0.0f, 0.0f};
-Camera3D camera = {0};
 
-NetClient client;
+AirSoft::NetClient client;
 
 entt::registry worldScene;
 entt::entity playerEntity;
@@ -84,126 +71,45 @@ Vector3 GetCameraUp()
     return result;
 }
 
-void UpdateCamera();
-void HandlePlayerMovement();
+void UpdateCamera(Camera& camera);
+void HandlePlayerMovement(Camera& camera);
 void ConnectToServer();
 void InitPlayerEntity(); // Call after connect to server
 void UpdatePlayerLocation();
 
 int main()
 {
-    SetConfigFlags(FLAG_MSAA_4X_HINT);
-    InitWindow(1270, 720, "Air Soft");
-    NetInit();
+    AirSoft::Application app;
 
-    client.ConnectTo();
+    enet_initialize();
+    client.ConnectTo("localhost");
+
 
 
     ConnectToServer();
     InitPlayerEntity();
-
-    
-    camera.position = { 0.0f, 50.0f, 0.0f };
-    camera.target = { 30.0f, 50.0f, 30.0f };
-    camera.up = { 0.0f, 1.0f, 0.0f };
-    camera.fovy = 60.0f;
-    camera.projection = CAMERA_PERSPECTIVE;
-
-    SetCameraMode(camera, CAMERA_CUSTOM);
-    SetTargetFPS(60);
-    DisableCursor();
-
-    Shader shader = LoadShaderFromMemory(
-#include "lighting_vs.h"
-,
-#include "lighting_fs.h"
-    );
-
-    shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
-
-    Model sphereModel = LoadModelFromMesh(GenMeshSphere(radius, 32, 32));
-    Model floorModel = LoadModelFromMesh(GenMeshCube(floorSize.x, floorSize.y, floorSize.z));
-
-    sphereModel.materials[0].shader = shader;
-    floorModel.materials[0].shader = shader;
-
-    int ambientLoc = GetShaderLocation(shader, "ambient");
-    Vector4 ambient = {0.1f, 0.1f, 0.1f, 0.1f};
-    SetShaderValue(shader, ambientLoc, &ambient.x, SHADER_UNIFORM_VEC4);
-
-
-    Light lights[MAX_LIGHTS] = { 0 };
-    lights[0] = CreateLight(LIGHT_DIRECTIONAL, Vector3{ -2000, 1000, -2000 }, Vector3Zero(), WHITE, shader);
-    //lights[1] = CreateLight(LIGHT_POINT, Vector3{ 20, 10, 20 }, Vector3Zero(), RED, shader);
-    //lights[2] = CreateLight(LIGHT_POINT, Vector3{ -20, 10, 20 }, Vector3Zero(), GREEN, shader);
-    //lights[3] = CreateLight(LIGHT_POINT, Vector3{ 20, 10, -20 }, Vector3Zero(), BLUE, shader);
 
 
     while (!WindowShouldClose())
     {
         client.Update();
 
-        HandlePlayerMovement();
-        UpdateCamera();
+        HandlePlayerMovement(app.GetPlayerCamera());
+        UpdateCamera(app.GetPlayerCamera());
         UpdatePlayerLocation();
 
-        
-        float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
-        SetShaderValue(shader, shader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
-
-
-        
-        for (int i = 0; i < MAX_LIGHTS; i++) UpdateLightValues(shader, lights[i]);
-
-
-        BeginDrawing(); 
-            ClearBackground(DARKGRAY);
-
-            BeginMode3D(camera);
-
-                DrawModel(sphereModel, Vector3{20.0f, 20.0f, 0.0f}, 1.0f, WHITE);
-                DrawModelWires(sphereModel, Vector3{20.0f, 20.0f, 0.0f}, 1.0f, BLACK);
-                DrawModel(floorModel, Vector3{0.0f, 0.0f, 0.0f}, 1.0f, RED);
-
-                rlPushMatrix();
-                    
-                    //DrawCapsule();
-
-                rlPopMatrix();
-
-            EndMode3D();
-
-            static Vector3 cameraUp;
-            static Vector3 cameraRight;
-            static Vector3 cameraForward;
-
-            cameraUp = GetCameraUp();
-            cameraRight = GetCameraRight();
-            cameraForward = GetCameraForward();
-
-            DrawText(TextFormat("Mouse Delta (%f, %f)", mousePositionDelta.x, mousePositionDelta.y), 5.0f, 20.0f, 24.0f, WHITE);
-            DrawText(TextFormat("Camera Position (%f, %f, %f)", camera.position.x, camera.position.y, camera.position.z), 5.0f, 50.0f, 24.0f, WHITE);
-            DrawText(TextFormat("Camera Forward (%f, %f, %f)", cameraForward.x, cameraForward.y, cameraForward.z), 5.0f, 80.0f, 24.0f, WHITE);
-            DrawText(TextFormat("Camera Right (%f, %f, %f)", cameraRight.x, cameraRight.y, cameraRight.z), 5.0f, 110.0f, 24.0f, WHITE);
-            DrawText(TextFormat("Camera Up (%f, %f, %f)", cameraUp.x, cameraUp.y, cameraUp.z), 5.0f, 140.0f, 24.0f, WHITE);
-            DrawText(TextFormat("Yaw (%f)", yaw), 5.0f, 200.0f, 24.0f, WHITE);
-            DrawText(TextFormat("Pitch (%f)", pitch), 5.0f, 230.0f, 24.0f, WHITE);
-
-            Ray ray;
-            ray.position = {0.0f, 0.0f, 0.0f};
-            ray.direction = {0.0f, 1000.0f, 0.0f};
-
-            DrawRay(ray, GREEN);
-        EndDrawing();
+        app.Update();
     }
 
-    NetDeinit();
+    client.Disconnect();
+
+    enet_deinitialize();
     CloseWindow();
     
     return 0;
 }
 
-void UpdateCamera()
+void UpdateCamera(Camera& camera)
 {
     mousePositionDelta = GetMouseDelta();
 
@@ -221,7 +127,7 @@ void UpdateCamera()
     camera.target = Vector3Add(camera.position, directionVector);
 }
 
-void HandlePlayerMovement()
+void HandlePlayerMovement(Camera& camera)
 {
     #define MOVESPEED (movementSpeed * GetFrameTime())
 
@@ -230,35 +136,44 @@ void HandlePlayerMovement()
     forward.y = 0.0f;   
     forward = Vector3Scale(Vector3Normalize(forward), MOVESPEED);
 
+    bool pressed = false;
+
     if (IsKeyDown(KEY_W))
     {
         camera.position = Vector3Add(camera.position, forward);
+        pressed = true;
         //playerBody->setTransform(rp::Transform(playerBody->getTransform().getPosition() + forward, rp::Quaternion::identity()));
     }
     if (IsKeyDown(KEY_S))
     {
         camera.position = Vector3Add(camera.position, Vector3Negate(forward));
+        pressed = true;
         //playerBody->setTransform(rp::Transform(playerBody->getTransform().getPosition() - forward, rp::Quaternion::identity()));
     }
     if (IsKeyDown(KEY_A))
     {
         camera.position = Vector3Add(camera.position, Vector3Negate(right));
+        pressed = true;
         //playerBody->setTransform(rp::Transform(playerBody->getTransform().getPosition() - right, rp::Quaternion::identity()));
     }
     if (IsKeyDown(KEY_D))
     {
         camera.position = Vector3Add(camera.position, right);
+        pressed = true;
         //playerBody->setTransform(rp::Transform(playerBody->getTransform().getPosition() + right, rp::Quaternion::identity()));
     }
     if (IsKeyDown(KEY_SPACE))
     {
         camera.position.y += MOVESPEED;
+        pressed = true;
         //playerBody->applyLocalForceAtCenterOfMass({0.0f, 20.0f, 0.0f});
     } 
     if (IsKeyDown(KEY_LEFT_SHIFT))
     {
         camera.position.y -= MOVESPEED;
+        pressed = true;
     }
+
 }
 
 void ConnectToServer()
@@ -271,10 +186,10 @@ void InitPlayerEntity()
     // Init player entity
     playerEntity = worldScene.create();
 
-    worldScene.emplace<Vector3>(playerEntity, camera.position);
+    //worldScene.emplace<Vector3>(playerEntity, camera.position);
 }
 
 void UpdatePlayerLocation()
 {
-    worldScene.replace<Vector3>(playerEntity, camera.position);
+    //worldScene.replace<Vector3>(playerEntity, camera.position);
 }

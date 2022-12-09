@@ -13,8 +13,7 @@ NetClient::NetClient()
 
 NetClient::~NetClient()
 {
-    enet_peer_reset((ENetPeer*)fPeer);
-    enet_host_destroy((ENetHost*)fHost);
+    Disconnect();
 }
 
 void NetClient::ConnectTo(const char* ipAddress, int port)
@@ -60,6 +59,25 @@ void NetClient::Update()
     ENetEvent event = { 0 };
     enet_host_service((ENetHost*)fHost, &event, 0);
 
+}
+
+void NetClient::Disconnect()
+{
+    if (!fHost) {return;}
+    if (!fPeer) {return;}
+    
+    enet_peer_disconnect((ENetPeer*)fPeer, 0);
+
+    ENetEvent event = {0};
+    if (enet_host_service((ENetHost*)fHost, &event, 1000) == 0 || event.type != ENET_EVENT_TYPE_DISCONNECT)
+    {
+        enet_peer_reset((ENetPeer*)fPeer);
+    }
+
+    enet_host_destroy((ENetHost*)fHost);
+
+    fPeer = NULL;
+    fHost = NULL;
 }
 
 int NetInit()

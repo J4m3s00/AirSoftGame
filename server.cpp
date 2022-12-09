@@ -1,5 +1,4 @@
-#define ENET_IMPLEMENTATION
-#include "deps/enet.h"
+#include "air_net.h"
 
 
 #include <stdio.h>
@@ -13,18 +12,20 @@
 static std::thread updateThread;
 static std::atomic<bool> serverRunning;
 
+#if 0
 void ServerEventConnect(const ENetEvent& event) 
 {
-    printf("[server] User connected from %x:%u.\n",  event.peer->address.host, event.peer->address.port);
+    std::cout << "[server] User connected from "/* << event.peer->address.host*/ << ":" << event.peer->address.port << "." << std::endl;
+    //printf("[server] User connected from %x:%d.\n", event.peer->address.host, event.peer->address.port);
 }
 void ServerEventDisconnect(const ENetEvent& event) 
 {
-    printf("[server] User disconnected from %x:%u.\n", event.peer->address.host, event.peer->address.port);
+    printf("[server] User disconnected from %x:%d.\n", event.peer->address.host, event.peer->address.port);
 }
 
 void ServerEvemtTimeout(const ENetEvent& event) 
 {
-    printf("[server] User timed out from %x:%u.\n", event.peer->address.host, event.peer->address.port);
+    printf("[server] User timed out from %x:%d.\n", event.peer->address.host, event.peer->address.port);
 }
 void ServerEventReceive(const ENetEvent& event) 
 {
@@ -49,12 +50,9 @@ void UpdateServer(ENetHost* server)
 
 int main()
 {
-    
-
     serverRunning = true;
 
     updateThread = std::thread([](){
-
         if (enet_initialize())
         {
             printf("[server] Error initializing ENet.\n");
@@ -96,3 +94,42 @@ int main()
     enet_deinitialize();
     return 0;    
 }
+
+#else 
+
+
+int main()
+{
+    
+
+    serverRunning = true;
+
+    updateThread = std::thread([](){
+        if (enet_initialize())
+        {
+            printf("[server] Error initializing ENet.\n");
+            return;
+        }
+        AirSoft::NetServer server;
+
+        while (serverRunning)
+        {
+            server.Update();
+        }
+    });
+
+    std::cin.get();
+
+    serverRunning = false;
+
+    if (updateThread.joinable())
+    {
+        updateThread.join();
+    }
+
+    printf("[server] Stopped!\n");
+
+    enet_deinitialize();
+}
+
+#endif
