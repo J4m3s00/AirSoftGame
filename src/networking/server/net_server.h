@@ -9,7 +9,8 @@ namespace AirSoft {
     class NetServer 
     {
     private:
-        ENetHost* fHost;
+        ENetHost*                               fHost;
+        std::unordered_map<uint32_t, ENetPeer*> fUserConnectionMap;
     public:
         NetServer(int port = 25565);
         ~NetServer();
@@ -18,8 +19,13 @@ namespace AirSoft {
 
         void ShutDown();
 
-        void SendToAllBut(Packet packet, ENetPeer* not);
+        void SendPacket(const Packet& packet, uint32_t userId);
+        void SendPacket(const Packet& packet, ENetPeer* peer);
+        void SendToAllBut(const Packet& packet, uint32_t notUserId);
     private:
+        uint32_t OnUserConnect(ENetPeer* peer);
+        void OnUserDisconnect(uint32_t userId);
+
         void ServerEventConnect(const ENetEvent& event);
         void ServerEventDisconnect(const ENetEvent& event);
         void ServerEventTimeout(const ENetEvent& event);

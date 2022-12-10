@@ -53,7 +53,25 @@ void NetClient::ConnectTo(const char* ipAddress, int port)
 void NetClient::Update()
 {
     ENetEvent event = { 0 };
-    enet_host_service(fHost, &event, 0);
+    while (enet_host_service(fHost, &event, 0) > 0)
+    {
+        switch (event.type)
+        {
+        case ENET_EVENT_TYPE_CONNECT:
+        {
+            break;
+        }
+        case ENET_EVENT_TYPE_RECEIVE:
+        {
+            Packet p = Packet::CreateFromBuffer(event.packet->data, event.packet->dataLength);
+            if (p.GetType() == PacketType::Player_Join)
+            {
+                printf("[client] new user connected.\n");
+            }
+            break;
+        }
+        }
+    }
 }
 
 void NetClient::Disconnect()
@@ -78,7 +96,7 @@ void NetClient::Disconnect()
 
 void NetClient::Send_PlayerMove(rp::Vector3 position, rp::Vector3 velocity)
 {   
-    Packet p = Packet::Create(PPlayer_Move{position, velocity});
+    Packet p = Packet::Create(PPlayer_Move{fPeer->connectID, position, velocity});
 
     SendPacket(p);
 

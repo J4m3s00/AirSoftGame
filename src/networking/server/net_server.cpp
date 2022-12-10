@@ -48,18 +48,61 @@ void NetServer::ShutDown()
     }
 }
 
-void NetServer::SendToAllBut(Packet packet, ENetPeer* not)
+void NetServer::SendPacket(const Packet& packet, uint32_t userId)
 {
-    ENetPeer* current = fHost->peers;
-    while (current < fHost->peers + fHost->peerCount) 
+    if (fUserConnectionMap.find(userId) == fUserConnectionMap.end())
     {
-        if (current != not) 
-        {
-            
-        }
+        printf("[server] Could not send packet to user %d. User was not found.\n", userId);
+        return;
+    }
+    SendPacket(packet, fUserConnectionMap.at(userId));
+}
 
-        current++;
-    } 
+void NetServer::SendPacket(const Packet& packet, ENetPeer* peer)
+{
+    ENetPacket* enPacket = enet_packet_create(NULL, 0, ENET_PACKET_FLAG_RELIABLE);
+    enPacket->data = new enet_uint8[packet.Size()];
+    enPacket->dataLength = packet.Size();
+    memcpy(enPacket->data, &packet.GetType(), sizeof(PacketType));
+    memcpy(enPacket->data + sizeof(PacketType), packet.GetBuffer(), packet.Size() - sizeof(PacketType));
+
+    enet_peer_send(peer, 0, enPacket);
+}
+
+void NetServer::SendToAllBut(const Packet& packet, uint32_t notUserId)
+{
+    for (auto& entry : fUserConnectionMap)
+    {
+        if (entry.first != notUserId)
+        {
+            SendPacket(packet, entry.second);
+        }
+    }
+}
+
+uint32_t NetServer::OnUserConnect(ENetPeer* peer)
+{
+    uint32_t userId = peer->connectID;
+    if (fUserConnectionMap.find(userId) != fUserConnectionMap.end())
+    {
+        if (peer == fUserConnectionMap.at(userId))
+        {
+            printf("[server] Warning: User allready connected with id %d\n", userId);
+            return userId;
+        }
+        // User id allready taken
+        while (fUserConnectionMap.find(++userId) != fUserConnectionMap.end()) {}
+    }
+    fUserConnectionMap[userId] = peer;
+    return userId;
+}
+
+void NetServer::OnUserDisconnect(uint32_t userId)
+{
+    if (fUserConnectionMap.find(userId) != fUserConnectionMap.end())
+    {
+        fUserConnectionMap.erase(userId);
+    }
 }
 
 void printPaddedHex(uint8_t byte)
@@ -98,6 +141,14 @@ void NetServer::ServerEventConnect(const ENetEvent& event)
     printf("[server] User connected from ");
     printAddress(event.peer->address.host);
     printf(":%d\n", event.peer->address.port);
+
+    uint32_t userId = OnUserConnect(event.peer);
+
+    event.peer->data = new uint32_t;
+    *((uint32_t*)event.peer->data) = userId;
+
+    Packet joinPacket = Packet::Create(PPlayer_Join{userId});
+    SendToAllBut(joinPacket, userId);
 }
 
 void NetServer::ServerEventDisconnect(const ENetEvent& event)
@@ -105,6 +156,14 @@ void NetServer::ServerEventDisconnect(const ENetEvent& event)
     printf("[server] User disconnected from ");
     printAddress(event.peer->address.host);
     printf(":%d\n", event.peer->address.port);
+
+    uint32_t userId = *(uint32_t*)event.peer->data;
+    OnUserDisconnect(userId);
+    
+    delete event.peer->data;
+    
+    Packet leavePacket = Packet::Create(PPlayer_Leave{userId});
+    SendToAllBut(leavePacket, userId);
 }
 
 void NetServer::ServerEventTimeout(const ENetEvent& event)
@@ -112,14 +171,22 @@ void NetServer::ServerEventTimeout(const ENetEvent& event)
     printf("[server] User timed out from ");
     printAddress(event.peer->address.host);
     printf(":%d\n", event.peer->address.port);
+
+    uint32_t userId = *(uint32_t*)event.peer->data;
+
+    OnUserDisconnect(userId);
+
+    delete event.peer->data;
+    
+    Packet timeOutPacket = Packet::Create(PPlayer_Timeout{userId});
+    SendToAllBut(timeOutPacket, userId);
 }
 
 void NetServer::ServerEventReceive(const ENetEvent& event)
 {
     if (event.packet->data && event.packet->dataLength > 0)
     {
-        Packet p{};
-        p.FromBuffer(event.packet->data, event.packet->dataLength);
+        Packet p = Packet::CreateFromBuffer(event.packet->data, event.packet->dataLength);
 
         switch (p.GetType())
         {
@@ -132,5 +199,7 @@ void NetServer::ServerEventReceive(const ENetEvent& event)
 
 void NetServer::OnPlayerMove(const PPlayer_Move& data)
 {
-    printf("[server] Player Move Pos: (%f, %f, %f)\n", data.Position.x, data.Position.y, data.Position.z);
+    //printf("[server] Player Move Pos: (%f, %f, %f)\n", data.Position.x, data.Position.y, data.Position.z);
+    Packet p = Packet::Create(data);
+    SendToAllBut(p, data.PlayerID);
 }
