@@ -12,8 +12,9 @@ namespace AirSoft {
         Light    fLights[MAX_LIGHTS];
         Model    fSphereModel;
         Model    fFloorModel;
+        Scene*   fCurrentScene;
     public:
-        Application();
+        Application(Scene* scene);
         ~Application();
 
         void Update();

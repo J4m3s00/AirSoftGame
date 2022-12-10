@@ -3,7 +3,7 @@
 using namespace AirSoft;
 
 NetClient::NetClient()
-    : fHost(nullptr), fPeer(nullptr)
+    : fHost(nullptr), fPeer(nullptr), fCurrentScene(nullptr)
 {
     
 }
@@ -64,9 +64,39 @@ void NetClient::Update()
         case ENET_EVENT_TYPE_RECEIVE:
         {
             Packet p = Packet::CreateFromBuffer(event.packet->data, event.packet->dataLength);
-            if (p.GetType() == PacketType::Player_Join)
+            switch (p.GetType())
             {
-                printf("[client] new user connected.\n");
+            case PacketType::Player_Join:
+            {
+                PPlayer_Join joinData = p.GetVal<PPlayer_Join>();
+                printf("[client] User %u connected.\n", joinData.PlayerID);
+                if (fCurrentScene)
+                {
+                    fCurrentScene->AddOnlinePlayer(joinData.PlayerID);
+                }
+                break;
+            }
+            case PacketType::Player_Leave:
+            {
+                PPlayer_Leave leaveData = p.GetVal<PPlayer_Leave>();
+                printf("[client] User %u disconnected.\n", leaveData.PlayerID);
+                break;
+            }
+            case PacketType::Player_Timeout:
+            {
+                PPlayer_Timeout timeoutData = p.GetVal<PPlayer_Timeout>();
+                printf("[client] User %u timed out.\n", timeoutData.PlayerID);
+                break;
+            }
+            case PacketType::Player_Move:
+            {
+                PPlayer_Move moveData = p.GetVal<PPlayer_Move>();
+                entt::entity playerEntity = fCurrentScene->GetOnlinePlayer(moveData.PlayerID);
+                OnlinePlayerComponent& opc = fCurrentScene->GetRegistry().get<OnlinePlayerComponent>(playerEntity);
+                opc.Position = moveData.Position;
+                //fCurrentScene->GetRegistry().emplace<OnlinePlayerComponent>(playerEntity, opc);
+                break;
+            }
             }
             break;
         }
@@ -101,6 +131,11 @@ void NetClient::Send_PlayerMove(rp::Vector3 position, rp::Vector3 velocity)
     SendPacket(p);
 
     p.Release();
+}
+
+void NetClient::SetCurrentScene(Scene* scene)
+{
+    fCurrentScene = scene;
 }
 
 void NetClient::SendPacket(const Packet& packet)

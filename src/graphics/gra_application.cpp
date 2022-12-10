@@ -8,8 +8,11 @@
 
 using namespace AirSoft;
 
-Application::Application()
+Application::Application(Scene* scene)
+    : fCurrentScene(scene)
 {
+    assert(fCurrentScene);
+
     SetConfigFlags(FLAG_MSAA_4X_HINT);
     InitWindow(1270, 720, "Air Soft");
 
@@ -48,10 +51,10 @@ Application::Application()
 
     // MODELS
     Vector3 floorSize = {100.0f, 1.0f, 100.0f};
-    float radius = 10.0f;
+    float radius = 2.0f;
 
     
-    fSphereModel = LoadModelFromMesh(GenMeshSphere(radius, 32, 32));
+    fSphereModel = LoadModelFromMesh(GenMeshKnot(radius, 5.0f, 64, 64));
     fSphereModel.materials[0].shader = fWorldShader;
 
 
@@ -80,8 +83,16 @@ void Application::Update()
 
         BeginMode3D(fPlayerCamera);
 
-            DrawModel(fSphereModel, Vector3{20.0f, 20.0f, 0.0f}, 1.0f, WHITE);
-            DrawModelWires(fSphereModel, Vector3{20.0f, 20.0f, 0.0f}, 1.0f, BLACK);
+            entt::registry& registry = fCurrentScene->GetRegistry();
+            auto view = registry.view<OnlinePlayerComponent>();
+            for (auto entry : view)
+            {
+                OnlinePlayerComponent opc = registry.get<OnlinePlayerComponent>(entry);
+                DrawModel(fSphereModel, VECTOR_CAST(Vector3)opc.Position, 1.0f, WHITE);                
+            }
+
+            //DrawModel(fSphereModel, Vector3{20.0f, 20.0f, 0.0f}, 1.0f, WHITE);
+            //DrawModelWires(fSphereModel, Vector3{20.0f, 20.0f, 0.0f}, 1.0f, BLACK);
             DrawModel(fFloorModel, Vector3{0.0f, 0.0f, 0.0f}, 1.0f, RED);
 
             rlPushMatrix();

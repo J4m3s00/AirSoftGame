@@ -19,8 +19,6 @@ enum class GameMessage {
 
 namespace rp = reactphysics3d;
 
-#define VECTOR_CAST(type) *(type*)&
-
 
 #define MAX_LIGHTS 4
 
@@ -37,10 +35,8 @@ float pitch = 0.0f;
 Vector2 mousePositionDelta = {0.0f, 0.0f};
 Vector3 directionVector = {0.0f, 0.0f, 0.0f};
 
-AirSoft::NetClient client;
-
-entt::registry worldScene;
-entt::entity playerEntity;
+AirSoft::NetClient  client;
+AirSoft::Scene      gameScene;
 
 Vector3 GetCameraForward()
 {
@@ -77,9 +73,11 @@ void UpdatePlayerLocation();
 
 int main()
 {
-    AirSoft::Application app;
+    AirSoft::Application app(&gameScene);
 
     enet_initialize();
+
+    client.SetCurrentScene(&gameScene);
     client.ConnectTo("localhost");
 
 
@@ -181,18 +179,12 @@ void HandlePlayerMovement(Camera& camera)
 
 void ConnectToServer()
 {
-
 }
 
 void InitPlayerEntity()
 {
-    // Init player entity
-    playerEntity = worldScene.create();
-
-    //worldScene.emplace<Vector3>(playerEntity, camera.position);
 }
 
 void UpdatePlayerLocation()
 {
-    //worldScene.replace<Vector3>(playerEntity, camera.position);
 }

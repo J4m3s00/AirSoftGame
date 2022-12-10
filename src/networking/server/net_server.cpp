@@ -149,6 +149,15 @@ void NetServer::ServerEventConnect(const ENetEvent& event)
 
     Packet joinPacket = Packet::Create(PPlayer_Join{userId});
     SendToAllBut(joinPacket, userId);
+
+    for (auto& entry : fUserConnectionMap)
+    {
+        if (entry.first != userId)
+        {
+            Packet joinPacket = Packet::Create(PPlayer_Join{entry.first});
+            SendPacket(joinPacket, event.peer);
+        }
+    }
 }
 
 void NetServer::ServerEventDisconnect(const ENetEvent& event)

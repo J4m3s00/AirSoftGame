@@ -11,6 +11,7 @@ namespace AirSoft {
     private:
         ENetHost* fHost;
         ENetPeer* fPeer;
+        Scene*      fCurrentScene;
     public:
         NetClient();
         ~NetClient();
@@ -21,6 +22,8 @@ namespace AirSoft {
         void Disconnect();
 
         void Send_PlayerMove(rp::Vector3 position, rp::Vector3 velocity);
+
+        void SetCurrentScene(Scene* scene);
     private:
         void SendPacket(const Packet& packet);
     };
