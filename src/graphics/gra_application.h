@@ -7,20 +7,25 @@ namespace AirSoft {
     class Application
     {
     private:
+        // This may change
         Camera3D fPlayerCamera;
+        PlayerController fPlayerController;
+
         Shader   fWorldShader;
         Light    fLights[MAX_LIGHTS];
         Model    fSphereModel;
         Model    fFloorModel;
-        Scene*   fCurrentScene;
+        NetClient* fClient;
     public:
-        Application(Scene* scene);
+        Application(NetClient* client);
         ~Application();
 
         void Update();
 
         Camera3D& GetPlayerCamera();
         const Camera3D& GetPlayerCamera() const;
+    private:
+        void HandlePlayerMovement();
     };
 
 }

@@ -23,6 +23,11 @@ namespace AirSoft {
 
         entt::registry& GetRegistry();
         const entt::registry& GetRegistry() const;
+
+        static void SetCurrentScene(Scene* scene);
+        static Scene* GetCurrentScene();
+
+        static entt::registry& GetCurrentRegistry();
     };
 
 }

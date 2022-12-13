@@ -35,6 +35,7 @@ void Scene::RemoveOnlinePlayer(uint32_t playerid)
 {
     if (fOnlinePlayerMap.find(playerid) != fOnlinePlayerMap.end())
     {
+        fRegistry.remove<OnlinePlayerComponent>(fOnlinePlayerMap.at(playerid));
         fRegistry.destroy(fOnlinePlayerMap.at(playerid));
         fOnlinePlayerMap.erase(playerid);
     }
@@ -48,4 +49,22 @@ entt::registry& Scene::GetRegistry()
 const entt::registry& Scene::GetRegistry() const
 {
     return fRegistry;
+}
+
+static Scene* CurrentScene = NULL;
+
+void Scene::SetCurrentScene(Scene* scene)
+{
+    CurrentScene = scene;
+}
+
+Scene* Scene::GetCurrentScene()
+{
+    return CurrentScene;
+}
+
+entt::registry& Scene::GetCurrentRegistry()
+{
+    assert(CurrentScene);
+    return CurrentScene->GetRegistry();
 }
