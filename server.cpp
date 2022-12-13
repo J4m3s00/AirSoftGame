@@ -13,6 +13,9 @@ static std::atomic<bool> serverRunning;
 
 int main()
 {
+    // Min req
+    AirSoft::GameInstance::Instance().CreateScene();
+
     serverRunning = true;
 
     updateThread = std::thread([](){

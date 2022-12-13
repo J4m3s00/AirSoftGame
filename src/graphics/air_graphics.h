@@ -9,5 +9,6 @@
 #include "rlgl.h"
 #include "raymath.h"
 
+#include "gra_genmesh.h"
 #include "rlights.h"
 #include "gra_application.h"

@@ -6,9 +6,6 @@
 #define MMNOSOUND
 #include "air_game.h"
 
-#include <stdio.h>
-#include <map>
-#include <vector>
 
 
 #include "../../deps/enet.h"

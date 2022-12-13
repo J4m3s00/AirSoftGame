@@ -1,5 +1,6 @@
 #include "air_graphics.h"
 
+#include "external/par_shapes.h"
 
 
 #define RLIGHTS_IMPLEMENTATION
@@ -60,10 +61,12 @@ Application::Application(NetClient* client)
 
     // MODELS
     Vector3 floorSize = {100.0f, 1.0f, 100.0f};
-    float radius = 2.0f;
+    float radius = GameInstance::Instance().GetPlayerDimensions().Radius;
+    float height = GameInstance::Instance().GetPlayerDimensions().Height;
 
-    
-    fSphereModel = LoadModelFromMesh(GenMeshKnot(radius, 5.0f, 64, 64));
+
+      
+    fSphereModel = LoadModelFromMesh(GenMeshCylinder(radius, height, 16));
     fSphereModel.materials[0].shader = fWorldShader;
 
 
@@ -106,12 +109,23 @@ void Application::Update()
                 if (!registry.valid(entry)) { continue; }
                 //printf("Rendering player\n");
                 OnlinePlayerComponent opc = registry.get<OnlinePlayerComponent>(entry);
+                auto dimensions = GameInstance::Instance().GetPlayerDimensions();
+                //DrawCapsuleWires({opc.Position.x, opc.Position.y - dimensions.Radius, opc.Position.z}, {opc.Position.x, opc.Position.y - (dimensions.Height - dimensions.Radius), opc.Position.z}, dimensions.Radius, 48, 48, WHITE);
                 DrawModel(fSphereModel, VECTOR_CAST(Vector3)opc.Position, 1.0f, WHITE);                
             }
 
             //DrawModel(fSphereModel, Vector3{20.0f, 20.0f, 0.0f}, 1.0f, WHITE);
             //DrawModelWires(fSphereModel, Vector3{20.0f, 20.0f, 0.0f}, 1.0f, BLACK);
-            DrawModel(fFloorModel, Vector3{0.0f, 0.0f, 0.0f}, 1.0f, RED);
+            DrawModel(fFloorModel, Vector3{0.0f, -5.0f, 0.0f}, 1.0f, RED);
+
+            Ray r{};
+            r.position = {};
+            r.direction = {1.0f, 0.0f, 0.0f};
+            DrawRay(r, BLUE);
+            r.direction = {0.0f, 1.0f, 0.0f};
+            DrawRay(r, RED);
+            r.direction = {0.0f, 0.0f, 1.0f};
+            DrawRay(r, GREEN);
 
             rlPushMatrix();
                 
@@ -121,8 +135,13 @@ void Application::Update()
 
         EndMode3D();
 
-
-        DrawText(TextFormat("Mouse Delta ()"), 5.0f, 20.0f, 24.0f, WHITE);
+        auto coreView = registry.view<PlayerScoreComponent>();
+        int i = 0;
+        for (auto entity : coreView)
+        {
+            uint32_t score = registry.get<PlayerScoreComponent>(entity).Points;
+            DrawText(TextFormat("Score: %u", score), 5.0f, 20.0f + (i * 20.0f), 24.0f, WHITE);
+        }
     EndDrawing();
 }
 
@@ -144,12 +163,20 @@ void Application::HandlePlayerMovement()
     input.Right = IsKeyDown(KEY_D);
     input.Left = IsKeyDown(KEY_A);
     input.Jump = IsKeyDown(KEY_SPACE);
+    input.Crouch = IsKeyDown(KEY_LEFT_SHIFT);
     input.MouseDelta = VECTOR_CAST(Vec2)GetMouseDelta();
 
+    PlayerComponent& player = Scene::GetCurrentRegistry().get<PlayerComponent>(fPlayerController.GetPlayerEntity());
     if (fPlayerController.ApplyInput(input, GetFrameTime()))
     {
-        PlayerComponent& player = Scene::GetCurrentRegistry().get<PlayerComponent>(fPlayerController.GetPlayerEntity());
-
         fClient->Send_PlayerMove(player.Position, {});
+    }
+
+    if (IsMouseButtonDown(0))
+    {
+        PPlayer_Shoot ps;
+        ps.Direction = GetCameraForward(player.Yaw * DEG2RAD, player.Pitch * DEG2RAD);
+        ps.Position = player.Position;
+        fClient->Send_PlayerShoot(ps);
     }
 }

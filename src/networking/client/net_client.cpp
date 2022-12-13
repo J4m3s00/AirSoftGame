@@ -95,6 +95,19 @@ void NetClient::Update()
                 opc.Position = moveData.Position;
                 break;
             }
+            case PacketType::Player_Hit:
+            {
+                PPlayer_Hit hitData = p.GetVal<PPlayer_Hit>();
+                entt::entity entity = Scene::GetCurrentScene()->GetOnlinePlayer(hitData.PlayerID);
+                if (entity == entt::null)
+                {
+                    // We hit ourself
+                }
+                else
+                {
+                    Scene::GetCurrentRegistry().get<PlayerScoreComponent>(entity).Points++;
+                }
+            }
             }
             break;
         }
@@ -125,6 +138,17 @@ void NetClient::Disconnect()
 void NetClient::Send_PlayerMove(rp::Vector3 position, rp::Vector3 velocity)
 {   
     Packet p = Packet::Create(PPlayer_Move{fPeer->connectID, position, velocity});
+
+    SendPacket(p);
+
+    p.Release();
+}
+
+void NetClient::Send_PlayerShoot(PPlayer_Shoot shoot)
+{
+    shoot.PlayerID = fPeer->connectID;
+
+    Packet p = Packet::Create(shoot);
 
     SendPacket(p);
 

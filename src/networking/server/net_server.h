@@ -21,6 +21,7 @@ namespace AirSoft {
 
         void SendPacket(const Packet& packet, uint32_t userId);
         void SendPacket(const Packet& packet, ENetPeer* peer);
+        void SendToAll(const Packet& packet);
         void SendToAllBut(const Packet& packet, uint32_t notUserId);
     private:
         uint32_t OnUserConnect(ENetPeer* peer);
@@ -33,6 +34,7 @@ namespace AirSoft {
 
     private:
         void OnPlayerMove(const PPlayer_Move& data);
+        void OnPlayerShoot(const PPlayer_Shoot& data);
     };
 
 }

@@ -35,12 +35,12 @@ float pitch = 0.0f;
 Vector2 mousePositionDelta = {0.0f, 0.0f};
 Vector3 directionVector = {0.0f, 0.0f, 0.0f};
 
+
 AirSoft::NetClient  client;
-AirSoft::Scene      gameScene;
 
 int main()
 {
-    AirSoft::Scene::SetCurrentScene(&gameScene);
+    AirSoft::GameInstance::Instance().CreateScene();    
 
     AirSoft::Application app(&client);
 

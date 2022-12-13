@@ -52,7 +52,12 @@ static inline Vec3 GetCameraUp(float yawAngle, float pitchAngle)
     return result;
 }
 
+#include <stdio.h>
+#include <map>
+#include <vector>
 
 
 #include "game_player_controller.h"
 #include "game_scene.h"
+
+#include "game_instance.h"

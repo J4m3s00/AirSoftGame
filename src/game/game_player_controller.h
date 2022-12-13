@@ -2,6 +2,11 @@
 
 namespace AirSoft {
 
+    struct PlayerScoreComponent
+    {
+        uint32_t Points;
+    };
+
     // Component
     struct PlayerComponent 
     {
@@ -27,6 +32,8 @@ namespace AirSoft {
 
         bool Jump = false;
         bool Crouch = false;
+
+        bool Shoot = false;
 
         Vec2 MouseDelta = {};
     };
