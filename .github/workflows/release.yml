@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 jobs:
-  Release Windows:
+  Release-Windows:
     runs-on: windows-latest
   
     steps:
