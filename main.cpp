@@ -78,7 +78,7 @@ int main()
     enet_initialize();
 
     client.SetCurrentScene(&gameScene);
-    client.ConnectTo("localhost");
+    client.ConnectTo("104berlin.de");
 
     ConnectToServer();
     InitPlayerEntity();
