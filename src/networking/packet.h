@@ -15,7 +15,8 @@ enum class PacketType
     Player_Move,
     Player_Shoot,
     Player_Jump,
-    Player_ThrowNade
+    Player_ThrowNade,
+    Player_Hit,
 };
 
 
@@ -70,6 +71,12 @@ struct PPlayer_ThrowNade
     PACK_PLAYER
     Vec3 Position;
     Vec3 Velocity;
+};
+
+struct PPlayer_Hit
+{
+    PCLASS(Player_Hit)
+    PACK_PLAYER
 };
 
 class Packet
@@ -154,6 +161,7 @@ public:
     static Packet Create(PPlayer_Jump data) { return CreatePacket(PacketType::Player_Jump, data); }
     static Packet Create(PPlayer_Shoot data) { return CreatePacket(PacketType::Player_Shoot, data); }
     static Packet Create(PPlayer_ThrowNade data) { return CreatePacket(PacketType::Player_ThrowNade, data); }    
+    static Packet Create(PPlayer_Hit data) { return CreatePacket(PacketType::Player_Hit, data); }    
 
 
     

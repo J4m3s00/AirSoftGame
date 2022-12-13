@@ -3,7 +3,7 @@
 using namespace AirSoft;
 
 NetClient::NetClient()
-    : fHost(nullptr), fPeer(nullptr), fCurrentScene(nullptr)
+    : fHost(nullptr), fPeer(nullptr)
 {
     
 }
@@ -70,32 +70,43 @@ void NetClient::Update()
             {
                 PPlayer_Join joinData = p.GetVal<PPlayer_Join>();
                 printf("[client] User %u connected.\n", joinData.PlayerID);
-                if (fCurrentScene)
-                {
-                    fCurrentScene->AddOnlinePlayer(joinData.PlayerID);
-                }
+                Scene::GetCurrentScene()->AddOnlinePlayer(joinData.PlayerID);
                 break;
             }
             case PacketType::Player_Leave:
             {
                 PPlayer_Leave leaveData = p.GetVal<PPlayer_Leave>();
                 printf("[client] User %u disconnected.\n", leaveData.PlayerID);
+                Scene::GetCurrentScene()->RemoveOnlinePlayer(leaveData.PlayerID);
                 break;
             }
             case PacketType::Player_Timeout:
             {
                 PPlayer_Timeout timeoutData = p.GetVal<PPlayer_Timeout>();
                 printf("[client] User %u timed out.\n", timeoutData.PlayerID);
+                Scene::GetCurrentScene()->RemoveOnlinePlayer(timeoutData.PlayerID);
                 break;
             }
             case PacketType::Player_Move:
             {
                 PPlayer_Move moveData = p.GetVal<PPlayer_Move>();
-                entt::entity playerEntity = fCurrentScene->GetOnlinePlayer(moveData.PlayerID);
-                OnlinePlayerComponent& opc = fCurrentScene->GetRegistry().get<OnlinePlayerComponent>(playerEntity);
+                entt::entity playerEntity = Scene::GetCurrentScene()->GetOnlinePlayer(moveData.PlayerID);
+                OnlinePlayerComponent& opc = Scene::GetCurrentScene()->GetRegistry().get<OnlinePlayerComponent>(playerEntity);
                 opc.Position = moveData.Position;
-                //fCurrentScene->GetRegistry().emplace<OnlinePlayerComponent>(playerEntity, opc);
                 break;
+            }
+            case PacketType::Player_Hit:
+            {
+                PPlayer_Hit hitData = p.GetVal<PPlayer_Hit>();
+                entt::entity entity = Scene::GetCurrentScene()->GetOnlinePlayer(hitData.PlayerID);
+                if (entity == entt::null)
+                {
+                    // We hit ourself
+                }
+                else
+                {
+                    Scene::GetCurrentRegistry().get<PlayerScoreComponent>(entity).Points++;
+                }
             }
             }
             break;
@@ -133,9 +144,15 @@ void NetClient::Send_PlayerMove(rp::Vector3 position, rp::Vector3 velocity)
     p.Release();
 }
 
-void NetClient::SetCurrentScene(Scene* scene)
+void NetClient::Send_PlayerShoot(PPlayer_Shoot shoot)
 {
-    fCurrentScene = scene;
+    shoot.PlayerID = fPeer->connectID;
+
+    Packet p = Packet::Create(shoot);
+
+    SendPacket(p);
+
+    p.Release();
 }
 
 void NetClient::SendPacket(const Packet& packet)

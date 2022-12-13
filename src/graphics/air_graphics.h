@@ -1,6 +1,6 @@
 #pragma once
 
-#include "air_game.h"
+#include "air_net.h"
 
 
 #undef far
@@ -9,5 +9,6 @@
 #include "rlgl.h"
 #include "raymath.h"
 
+#include "gra_genmesh.h"
 #include "rlights.h"
 #include "gra_application.h"

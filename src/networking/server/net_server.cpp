@@ -69,6 +69,14 @@ void NetServer::SendPacket(const Packet& packet, ENetPeer* peer)
     enet_peer_send(peer, 0, enPacket);
 }
 
+void NetServer::SendToAll(const Packet& packet)
+{
+    for (auto& entry : fUserConnectionMap)
+    {
+        SendPacket(packet, entry.second);
+    }
+}
+
 void NetServer::SendToAllBut(const Packet& packet, uint32_t notUserId)
 {
     for (auto& entry : fUserConnectionMap)
@@ -94,6 +102,7 @@ uint32_t NetServer::OnUserConnect(ENetPeer* peer)
         while (fUserConnectionMap.find(++userId) != fUserConnectionMap.end()) {}
     }
     fUserConnectionMap[userId] = peer;
+    Scene::GetCurrentScene()->AddOnlinePlayer(userId);
     return userId;
 }
 
@@ -103,6 +112,7 @@ void NetServer::OnUserDisconnect(uint32_t userId)
     {
         fUserConnectionMap.erase(userId);
     }
+    Scene::GetCurrentScene()->RemoveOnlinePlayer(userId);
 }
 
 void printPaddedHex(uint8_t byte)
@@ -200,6 +210,7 @@ void NetServer::ServerEventReceive(const ENetEvent& event)
         switch (p.GetType())
         {
         case PacketType::Player_Move: OnPlayerMove(p.GetVal<PPlayer_Move>()); break;
+        case PacketType::Player_Shoot: OnPlayerShoot(p.GetVal<PPlayer_Shoot>()); break;
         }
     }
 
@@ -211,4 +222,34 @@ void NetServer::OnPlayerMove(const PPlayer_Move& data)
     //printf("[server] Player Move Pos: (%f, %f, %f)\n", data.Position.x, data.Position.y, data.Position.z);
     Packet p = Packet::Create(data);
     SendToAllBut(p, data.PlayerID);
+
+    rp::CollisionBody* body = Scene::GetCurrentScene()->GetEntityCollisionBody(Scene::GetCurrentScene()->GetOnlinePlayer(data.PlayerID));
+    rp::Transform currentTransform = body->getTransform();
+    currentTransform.setPosition(data.Position);
+    body->setTransform(currentTransform);
+}
+
+void NetServer::OnPlayerShoot(const PPlayer_Shoot& data)
+{
+    //rp::CapsuleShape shape;
+    rp::PhysicsCommon* physicsCommon = Scene::GetCurrentScene()->GetPhysicsCommon();
+    rp::PhysicsWorld* world = Scene::GetCurrentScene()->GetPhysicsWorld();
+    
+    auto view = Scene::GetCurrentRegistry().view<OnlinePlayerComponent>();
+
+    rp::Ray ray(data.Position, data.Position + (data.Direction * 10000));
+
+    for (auto entity : view)
+    {
+        rp::CollisionBody* body = Scene::GetCurrentScene()->GetEntityCollisionBody(entity);
+        rp::RaycastInfo raycastInfo;
+        if (body->raycast(ray, raycastInfo))
+        {
+            // Player hit!
+            printf("PLAYER HIT\n");
+            PPlayer_Hit hit;
+            hit.PlayerID = Scene::GetCurrentScene()->GetUserId(entity);
+            SendToAll(Packet::Create(hit));
+        }
+    }
 }
