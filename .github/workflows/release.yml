@@ -2,7 +2,7 @@ name: Release - CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   Release-Windows:
