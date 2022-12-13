@@ -80,9 +80,6 @@ int main()
     client.SetCurrentScene(&gameScene);
     client.ConnectTo("localhost");
 
-
-
-
     ConnectToServer();
     InitPlayerEntity();
 

@@ -1,0 +1,32 @@
+name: Release - CI
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  Release Windows:
+    runs-on: windows-latest
+  
+    steps:
+    - uses: actions/checkout@master
+    - name: Checkout submodules
+      run: git submodule update --init --recursive
+    - name: configure
+      run: |
+            mkdir build
+            cd build
+            cmake -DCMAKE_BUILD_TYPE=Release ..
+    - name: build
+      run: |
+            cd build
+            cmake --build .
+    - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: "Development Build"
+          files: |
+            build/Release/Game.exe
+            build/Release/ServerExec.exe
