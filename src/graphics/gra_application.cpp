@@ -140,7 +140,7 @@ void Application::Update()
         for (auto entity : coreView)
         {
             uint32_t score = registry.get<PlayerScoreComponent>(entity).Points;
-            DrawText(TextFormat("Score: %u", score), 5.0f, 20.0f + (i * 20.0f), 24.0f, WHITE);
+            DrawText(TextFormat("Score: %u", score), 5.0f, 20.0f + (i++ * 20.0f), 24.0f, WHITE);
         }
     EndDrawing();
 }
