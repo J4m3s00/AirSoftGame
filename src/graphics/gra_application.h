@@ -11,7 +11,7 @@ namespace AirSoft {
         float Thickness;
         float OutlineThickness;
 
-        bool ThrawOutline;
+        bool DrawOutline;
         bool Dot;
     };
 
