@@ -26,9 +26,33 @@ static CrosshairSettings crosshairSettings = {
     5, /*.Size*/
     3, /*.Thickness*/
     0.5, /*.OutlineThickness*/
-    false, /*.ThrawOutline*/
-    false /*.Dot*/
+    true, /*.ThrawOutline*/
+    true /*.Dot*/
 };
+
+void ChangeCrosshairByKey()
+{
+    /*
+     *  r = Gap+  |  t = Size+  |  z = thick+  |  u = outline+  |  i = outline?
+     *  f = Gab-  |  g = Size-  |  h = thick-  |  j = outline-  |  k = dot?
+     * 
+     *  1 = normal steps
+     *  0.5 = small steps (hold lshift)
+     */
+    
+    float steps = IsKeyDown(KEY_LEFT_SHIFT) ? 0.5f : 1.0f;
+    
+    if (IsKeyPressed(KEY_R)) crosshairSettings.Gab += steps;
+    if (IsKeyPressed(KEY_F)) crosshairSettings.Gab -= steps;
+    if (IsKeyPressed(KEY_T)) crosshairSettings.Size += steps;
+    if (IsKeyPressed(KEY_G)) crosshairSettings.Size -= steps;
+    if (IsKeyPressed(KEY_Y)) crosshairSettings.Thickness += steps;
+    if (IsKeyPressed(KEY_H)) crosshairSettings.Thickness -= steps;
+    if (IsKeyPressed(KEY_U)) crosshairSettings.OutlineThickness += steps;
+    if (IsKeyPressed(KEY_J)) crosshairSettings.OutlineThickness -= steps;
+    if (IsKeyPressed(KEY_I)) crosshairSettings.DrawOutline = !crosshairSettings.DrawOutline;
+    if (IsKeyPressed(KEY_K)) crosshairSettings.Dot = !crosshairSettings.Dot;
+}
 
 Application::Application(NetClient* client)
     : fClient(client), fPlayerController(Scene::GetCurrentRegistry().create(), settings)
@@ -96,6 +120,8 @@ Application::~Application()
 
 void Application::Update()
 {
+    ChangeCrosshairByKey();
+
     HandlePlayerMovement();
     entt::registry& registry = Scene::GetCurrentRegistry();
     PlayerComponent& player = registry.get<PlayerComponent>(fPlayerController.GetPlayerEntity());
@@ -148,6 +174,7 @@ void Application::Update()
 
             rlPopMatrix();
 
+
         EndMode3D();
 
         auto coreView = registry.view<PlayerScoreComponent>();
@@ -181,7 +208,7 @@ void Application::HandlePlayerMovement()
     input.Right = IsKeyDown(KEY_D);
     input.Left = IsKeyDown(KEY_A);
     input.Jump = IsKeyDown(KEY_SPACE);
-    input.Crouch = IsKeyDown(KEY_LEFT_SHIFT);
+    input.Crouch = IsKeyDown(KEY_LEFT_CONTROL);
     input.MouseDelta = VECTOR_CAST(Vec2)GetMouseDelta();
 
     PlayerComponent& player = Scene::GetCurrentRegistry().get<PlayerComponent>(fPlayerController.GetPlayerEntity());
@@ -211,28 +238,53 @@ void Application::DrawCrossHair()
      *  width  |_| 
      */
 
+    Rectangle rLeft;
+    Rectangle rRight;
+    Rectangle rTop;
+    Rectangle rBottom;
+
     // Left
-    DrawRectangle(SCREEN_CENTER_X - (crosshairSettings.Gab + crosshairSettings.Size), 
-                  SCREEN_CENTER_Y - (crosshairSettings.Thickness / 2), 
-                  crosshairSettings.Size, 
-                  crosshairSettings.Thickness, 
-                  GREEN);
-    // Right
-    DrawRectangle(SCREEN_CENTER_X + crosshairSettings.Gab, 
-                  SCREEN_CENTER_Y - (crosshairSettings.Thickness / 2), 
-                  crosshairSettings.Size, 
-                  crosshairSettings.Thickness, 
-                  GREEN);
-    // Top
-    DrawRectangle(SCREEN_CENTER_X - crosshairSettings.Thickness / 2,
-                  SCREEN_CENTER_Y - (crosshairSettings.Gab + crosshairSettings.Size), 
-                  crosshairSettings.Thickness, 
-                  crosshairSettings.Size, 
-                  GREEN);
-    // Bottom
-    DrawRectangle(SCREEN_CENTER_X - crosshairSettings.Thickness / 2, 
-                  SCREEN_CENTER_Y + crosshairSettings.Gab, 
-                  crosshairSettings.Thickness, 
-                  crosshairSettings.Size, 
-                  GREEN);
+    rLeft.x = SCREEN_CENTER_X - (crosshairSettings.Gab + crosshairSettings.Size);
+    rLeft.y = SCREEN_CENTER_Y - (crosshairSettings.Thickness / 2);
+    rLeft.width = crosshairSettings.Size;
+    rLeft.height = crosshairSettings.Thickness;
+
+    rRight.x = SCREEN_CENTER_X + crosshairSettings.Gab;
+    rRight.y = SCREEN_CENTER_Y - (crosshairSettings.Thickness / 2);
+    rRight.width = crosshairSettings.Size;
+    rRight.height = crosshairSettings.Thickness;
+
+    rTop.x = SCREEN_CENTER_X - crosshairSettings.Thickness / 2;
+    rTop.y = SCREEN_CENTER_Y - (crosshairSettings.Gab + crosshairSettings.Size);
+    rTop.width = crosshairSettings.Thickness;
+    rTop.height = crosshairSettings.Size;
+
+    rBottom.x = SCREEN_CENTER_X - crosshairSettings.Thickness / 2;
+    rBottom.y = SCREEN_CENTER_Y + crosshairSettings.Gab;
+    rBottom.width = crosshairSettings.Thickness;
+    rBottom.height = crosshairSettings.Size;
+
+
+    DrawRectangleRec(rLeft, GREEN);
+    DrawRectangleRec(rRight, GREEN);
+    DrawRectangleRec(rTop, GREEN);
+    DrawRectangleRec(rBottom, GREEN);
+
+    if (crosshairSettings.DrawOutline)
+    {
+        DrawRectangleLinesEx(rLeft, crosshairSettings.OutlineThickness, BLACK);
+        DrawRectangleLinesEx(rRight, crosshairSettings.OutlineThickness, BLACK);
+        DrawRectangleLinesEx(rTop, crosshairSettings.OutlineThickness, BLACK);
+        DrawRectangleLinesEx(rBottom, crosshairSettings.OutlineThickness, BLACK);
+    }
+    if (crosshairSettings.Dot)
+    {
+        #define DOT_RAD 2
+
+        DrawCircle(SCREEN_CENTER_X, SCREEN_CENTER_Y, DOT_RAD, GREEN);
+        if (crosshairSettings.DrawOutline)
+        {
+            DrawCircleLines(SCREEN_CENTER_X, SCREEN_CENTER_Y, DOT_RAD, BLACK);
+        }
+    }   
 }
