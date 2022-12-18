@@ -52,6 +52,7 @@ void NetClient::ConnectTo(const char* ipAddress, int port)
 
 void NetClient::Update()
 {
+    if (!fHost) { return; }
     ENetEvent event = { 0 };
     while (enet_host_service(fHost, &event, 0) > 0)
     {
@@ -137,6 +138,10 @@ void NetClient::Disconnect()
 
 void NetClient::Send_PlayerMove(rp::Vector3 position, rp::Vector3 velocity)
 {   
+    if (!fPeer)
+    {
+        return;
+    }
     Packet p = Packet::Create(PPlayer_Move{fPeer->connectID, position, velocity});
 
     SendPacket(p);
@@ -146,6 +151,10 @@ void NetClient::Send_PlayerMove(rp::Vector3 position, rp::Vector3 velocity)
 
 void NetClient::Send_PlayerShoot(PPlayer_Shoot shoot)
 {
+    if (!fPeer)
+    {
+        return;
+    }
     shoot.PlayerID = fPeer->connectID;
 
     Packet p = Packet::Create(shoot);
@@ -157,6 +166,10 @@ void NetClient::Send_PlayerShoot(PPlayer_Shoot shoot)
 
 void NetClient::SendPacket(const Packet& packet)
 {
+    if (!fPeer)
+    {
+        return;
+    }
     ENetPacket* enPacket = enet_packet_create(NULL, 0, ENET_PACKET_FLAG_RELIABLE);
     enPacket->data = new enet_uint8[packet.Size()];
     enPacket->dataLength = packet.Size();

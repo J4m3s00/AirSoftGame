@@ -4,6 +4,17 @@
 
 namespace AirSoft {
 
+    struct CrosshairSettings
+    {
+        float Gab;
+        float Size;
+        float Thickness;
+        float OutlineThickness;
+
+        bool ThrawOutline;
+        bool Dot;
+    };
+
     class Application
     {
     private:
@@ -26,6 +37,7 @@ namespace AirSoft {
         const Camera3D& GetPlayerCamera() const;
     private:
         void HandlePlayerMovement();
+        void DrawCrossHair();
     };
 
 }

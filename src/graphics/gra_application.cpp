@@ -6,6 +6,12 @@
 #define RLIGHTS_IMPLEMENTATION
 #include "rlights.h"
 
+#define SCREEN_WIDTH 1270
+#define SCREEN_HEIGHT 720
+
+#define SCREEN_CENTER_X (SCREEN_WIDTH / 2)
+#define SCREEN_CENTER_Y (SCREEN_HEIGHT / 2)
+
 
 using namespace AirSoft;
 
@@ -15,12 +21,21 @@ static PlayerControllSettings settings = {
     /*.Sensity = */1.2f
 }; // Load from file in future
 
+static CrosshairSettings crosshairSettings = {
+    3, /*.Gab*/
+    5, /*.Size*/
+    3, /*.Thickness*/
+    0.5, /*.OutlineThickness*/
+    false, /*.ThrawOutline*/
+    false /*.Dot*/
+};
+
 Application::Application(NetClient* client)
     : fClient(client), fPlayerController(Scene::GetCurrentRegistry().create(), settings)
 {
     assert(client);
     SetConfigFlags(FLAG_MSAA_4X_HINT);
-    InitWindow(1270, 720, "Air Soft");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Air Soft");
 
     //Set Player position and camera
     const Vec3 START_POS = { 0.0f, 50.0f, 0.0f };
@@ -142,6 +157,9 @@ void Application::Update()
             uint32_t score = registry.get<PlayerScoreComponent>(entity).Points;
             DrawText(TextFormat("Score: %u", score), 5.0f, 20.0f + (i++ * 20.0f), 24.0f, WHITE);
         }
+
+        // Draw crosshair last to overlay everything
+        DrawCrossHair();
     EndDrawing();
 }
 
@@ -179,4 +197,42 @@ void Application::HandlePlayerMovement()
         ps.Position = player.Position;
         fClient->Send_PlayerShoot(ps);
     }
+}
+
+void Application::DrawCrossHair()
+{
+    /**         _
+     *         | |  
+     *         |_|     
+     *  _____       _____
+     * |_____| gab |_____| <- thickness
+     *   ^      _  
+     *   |     | | <- height
+     *  width  |_| 
+     */
+
+    // Left
+    DrawRectangle(SCREEN_CENTER_X - (crosshairSettings.Gab + crosshairSettings.Size), 
+                  SCREEN_CENTER_Y - (crosshairSettings.Thickness / 2), 
+                  crosshairSettings.Size, 
+                  crosshairSettings.Thickness, 
+                  GREEN);
+    // Right
+    DrawRectangle(SCREEN_CENTER_X + crosshairSettings.Gab, 
+                  SCREEN_CENTER_Y - (crosshairSettings.Thickness / 2), 
+                  crosshairSettings.Size, 
+                  crosshairSettings.Thickness, 
+                  GREEN);
+    // Top
+    DrawRectangle(SCREEN_CENTER_X - crosshairSettings.Thickness / 2,
+                  SCREEN_CENTER_Y - (crosshairSettings.Gab + crosshairSettings.Size), 
+                  crosshairSettings.Thickness, 
+                  crosshairSettings.Size, 
+                  GREEN);
+    // Bottom
+    DrawRectangle(SCREEN_CENTER_X - crosshairSettings.Thickness / 2, 
+                  SCREEN_CENTER_Y + crosshairSettings.Gab, 
+                  crosshairSettings.Thickness, 
+                  crosshairSettings.Size, 
+                  GREEN);
 }
