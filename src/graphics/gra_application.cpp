@@ -3,6 +3,7 @@
 #include "external/par_shapes.h"
 
 
+
 #define RLIGHTS_IMPLEMENTATION
 #include "rlights.h"
 
@@ -60,6 +61,7 @@ Application::Application(NetClient* client)
     assert(client);
     SetConfigFlags(FLAG_MSAA_4X_HINT);
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Air Soft");
+    SetExitKey(0);
 
     //Set Player position and camera
     const Vec3 START_POS = { 0.0f, 50.0f, 0.0f };
@@ -74,6 +76,8 @@ Application::Application(NetClient* client)
     
     SetCameraMode(fPlayerCamera, CAMERA_CUSTOM);
     SetTargetFPS(60);
+
+    fCursorEnabled = false;
     DisableCursor();
 
 
@@ -120,9 +124,19 @@ Application::~Application()
 
 void Application::Update()
 {
+    if (/*IsKeyPressed(KEY_PERIOD) || */IsKeyPressed(KEY_ESCAPE))
+    {
+        fCursorEnabled = !fCursorEnabled;
+        //fConsole.ToggleVisibility();
+    }
+    fCursorEnabled ? EnableCursor() : DisableCursor();
+    if (!fCursorEnabled)
+    {
+        HandlePlayerMovement();
+    }
+
     ChangeCrosshairByKey();
 
-    HandlePlayerMovement();
     entt::registry& registry = Scene::GetCurrentRegistry();
     PlayerComponent& player = registry.get<PlayerComponent>(fPlayerController.GetPlayerEntity());
 
@@ -187,6 +201,8 @@ void Application::Update()
 
         // Draw crosshair last to overlay everything
         DrawCrossHair();
+
+        fConsole.Render();
     EndDrawing();
 }
 

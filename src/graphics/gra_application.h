@@ -27,6 +27,9 @@ namespace AirSoft {
         Model    fSphereModel;
         Model    fFloorModel;
         NetClient* fClient;
+
+        bool fCursorEnabled;
+        UIConsole fConsole;
     public:
         Application(NetClient* client);
         ~Application();
