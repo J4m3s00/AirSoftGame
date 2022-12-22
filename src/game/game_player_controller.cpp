@@ -17,7 +17,7 @@ PlayerController::PlayerController(entt::entity playerEntity, const PlayerContro
 
 bool PlayerController::ApplyInput(const PlayerInput& input, float frameTime)
 {
-    bool changed = input.Backward || input.Forward || input.Left || input.Right ||input.Jump || input.MouseDelta.lengthSquare() != 0;
+    bool changed = input.Backward || input.Forward || input.Left || input.Right || input.Jump || input.Crouch || input.MouseDelta.lengthSquare() != 0;
 
     // Direction looking from above
     Vec3 moveDirection = {};

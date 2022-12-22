@@ -46,7 +46,7 @@ int main()
 
     enet_initialize();
 
-    //client.ConnectTo("104berlin.de");
+    client.ConnectTo("104berlin.de");
 
     while (!WindowShouldClose())
     {
@@ -55,7 +55,7 @@ int main()
         app.Update();
     }
     
-    //client.Disconnect();
+    client.Disconnect();
     enet_deinitialize();
 
     return 0;

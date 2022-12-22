@@ -165,8 +165,8 @@ void Application::Update()
                 //printf("Rendering player\n");
                 OnlinePlayerComponent opc = registry.get<OnlinePlayerComponent>(entry);
                 auto dimensions = GameInstance::Instance().GetPlayerDimensions();
-                //DrawCapsuleWires({opc.Position.x, opc.Position.y - dimensions.Radius, opc.Position.z}, {opc.Position.x, opc.Position.y - (dimensions.Height - dimensions.Radius), opc.Position.z}, dimensions.Radius, 48, 48, WHITE);
-                DrawModel(fSphereModel, VECTOR_CAST(Vector3)opc.Position, 1.0f, WHITE);                
+                DrawCapsuleWires(VECTOR_CAST(Vector3)opc.Position, {opc.Position.x, opc.Position.y - dimensions.Height, opc.Position.z}, dimensions.Radius, 48, 48, WHITE);
+                //DrawModel(fSphereModel, VECTOR_CAST(Vector3)opc.Position, 1.0f, WHITE);                
             }
 
             //DrawModel(fSphereModel, Vector3{20.0f, 20.0f, 0.0f}, 1.0f, WHITE);

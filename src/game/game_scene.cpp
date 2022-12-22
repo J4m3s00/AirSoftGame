@@ -24,7 +24,7 @@ entt::entity Scene::AddOnlinePlayer(uint32_t playerId)
 
     rp::CapsuleShape* shape = fPhysicsCommon->createCapsuleShape(radius, height);
     rp::CollisionBody* body = fPhysicsWorld->createCollisionBody(rp::Transform::identity());
-    body->addCollider(shape, rp::Transform::identity());
+    body->addCollider(shape, rp::Transform(rp::Vector3(0, -height * 0.5f, 0), rp::Quaternion::identity()));
 
     fEntityPhysicsObjectMap.insert({result, body});
     fUserIdToEntityMap.insert({playerId, result});
